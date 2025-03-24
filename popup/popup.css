@@ -122,3 +122,33 @@ input:focus {
   width: auto;
   margin-right: 8px;
 }
+
+.settings-toggle {
+  width: 100%;
+  padding: 8px;
+  background-color: #333;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  margin: 16px 0;
+  transition: background-color 0.2s;
+}
+
+.settings-panel {
+  display: none;
+  padding: 16px;
+  margin-bottom: 16px;
+  border-radius: 6px;
+  background-color: #222;
+}
+
+.settings-panel.show {
+  display: block;
+}
+
+.settings-panel h2 {
+  margin-top: 0;
+}

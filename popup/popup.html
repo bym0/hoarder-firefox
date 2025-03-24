@@ -10,31 +10,41 @@
 <body>
   <div class="popup-content">
     <img src="https://github.com/hoarder-app/hoarder/raw/main/screenshots/logo.png" style="width: 100%;">
-    <h2>Credentials</h2>
-    <form>
-      <div class="form-group">
-        <label for="hoarderUrl">URL</label>
-        <input type="url" id="hoarderUrl" name="hoarderUrl" placeholder="Enter Hoarder URL" required>
-      </div>
-      <div class="form-group">
-        <label for="apiToken">API Token</label>
-        <input type="password" id="apiToken" name="apiToken" placeholder="Enter your API token" required>
-      </div>
-      <div class="form-group checkbox-group">
-        <label for="showNotifications">
-          <input type="checkbox" id="showNotifications" name="showNotifications">
-          Show notifications
-        </label>
-      </div>
-      <div class="form-group checkbox-group">
-        <label for="hoardOnOpen">
-          <input type="checkbox" id="hoardOnOpen" name="hoardOnOpen">
-          Hoard on popup open
-        </label>
-      </div>
-      <button type="button" class="import-button">Send All Bookmarks</button>
-      <button type="submit" class="submit-button">Save</button>
-    </form>
+    
+    <button type="button" class="settings-toggle">Settings ▼</button>
+    <div class="settings-panel">
+      <h2>Credentials</h2>
+      <form>
+        <div class="form-group">
+          <label for="hoarderUrl">URL</label>
+          <input type="url" id="hoarderUrl" name="hoarderUrl" placeholder="Enter Hoarder URL" required>
+        </div>
+        <div class="form-group">
+          <label for="apiToken">API Token</label>
+          <input type="password" id="apiToken" name="apiToken" placeholder="Enter your API token" required>
+        </div>
+        <div class="form-group checkbox-group">
+          <label for="showNotifications">
+            <input type="checkbox" id="showNotifications" name="showNotifications">
+            Show notifications
+          </label>
+        </div>
+        <div class="form-group checkbox-group">
+          <label for="hoardOnOpen">
+            <input type="checkbox" id="hoardOnOpen" name="hoardOnOpen">
+            Hoard on popup open
+          </label>
+        </div>
+        <div class="form-group checkbox-group">
+          <label for="sendOnBookmark">
+            <input type="checkbox" id="sendOnBookmark" name="sendOnBookmark">
+            Send on bookmark creation
+          </label>
+        </div>
+      </form>
+    </div>
+    
+    <button type="button" class="import-button">Send All Bookmarks</button>
   </div>
   <script src="popup.js"></script>
 </body>

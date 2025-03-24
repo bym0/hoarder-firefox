@@ -1,4 +1,12 @@
 document.addEventListener('DOMContentLoaded', async function() {
+  const settingsToggle = document.querySelector('.settings-toggle');
+  const settingsPanel = document.querySelector('.settings-panel');
+
+  settingsToggle.addEventListener('click', () => {
+    settingsPanel.classList.toggle('show');
+    settingsToggle.textContent = settingsPanel.classList.contains('show') ? 'Settings ▼' : 'Settings ►';
+  });
+  
   const form = document.querySelector('form');
   const urlInput = document.getElementById('hoarderUrl');
   const apiTokenInput = document.getElementById('apiToken');
@@ -6,7 +14,11 @@ document.addEventListener('DOMContentLoaded', async function() {
   const hoardOnOpenCheckbox = document.getElementById('hoardOnOpen');
 
   // Load saved values when popup opens
-  const stored = await browser.storage.local.get(['hoarderUrl', 'apiToken', 'showNotifications', 'hoardOnOpen']);
+  // Add to const declarations
+  const sendOnBookmarkCheckbox = document.getElementById('sendOnBookmark');
+
+  // Update stored values loading
+  const stored = await browser.storage.local.get(['hoarderUrl', 'apiToken', 'showNotifications', 'hoardOnOpen', 'sendOnBookmark']);
   if (stored.hoarderUrl) {
     urlInput.value = stored.hoarderUrl;
   }
@@ -19,17 +31,17 @@ document.addEventListener('DOMContentLoaded', async function() {
   if (stored.hoardOnOpen !== undefined) {
     hoardOnOpenCheckbox.checked = stored.hoardOnOpen;
   }
-
-  // Add checkbox change listeners
-  notificationsCheckbox.addEventListener('change', saveValues);
-  hoardOnOpenCheckbox.addEventListener('change', saveValues);
+  if (stored.sendOnBookmark !== undefined) {
+    sendOnBookmarkCheckbox.checked = stored.sendOnBookmark;
+  }
 
   async function saveValues() {
     const formData = {
       hoarderUrl: urlInput.value,
       apiToken: apiTokenInput.value,
       showNotifications: notificationsCheckbox.checked,
-      hoardOnOpen: hoardOnOpenCheckbox.checked
+      hoardOnOpen: hoardOnOpenCheckbox.checked,
+      sendOnBookmark: sendOnBookmarkCheckbox.checked
     };
     await browser.storage.local.set(formData);
   }
@@ -37,21 +49,26 @@ document.addEventListener('DOMContentLoaded', async function() {
   // Add input change listeners for instant saving
   urlInput.addEventListener('input', saveValues);
   apiTokenInput.addEventListener('input', saveValues);
+  notificationsCheckbox.addEventListener('change', saveValues);
+  hoardOnOpenCheckbox.addEventListener('change', saveValues);
+  sendOnBookmarkCheckbox.addEventListener('change', saveValues);
 
-  async function saveValues() {
-    const formData = {
-      hoarderUrl: urlInput.value,
-      apiToken: apiTokenInput.value
-    };
-    await browser.storage.local.set(formData);
+  async function notify(msg) {
+    if (stored.showNotifications === true) {
+      browser.notifications.create({
+        type: 'basic',
+        iconUrl: 'icon.png',
+        title: 'Hoarder Extension (Unofficial)',
+        message: msg
+      });
+    }
   }
 
-  // Add notification div to the body
-  const notification = document.createElement('div');
-  notification.className = 'notification';
-  notification.textContent = 'Hoarded!';
-  document.body.appendChild(notification);
-
+  // Add a URL sanitization function
+  async function sanitizeUrl(url) {
+    return url.replace(/\/+$/, '');
+  }
+  
   // If we have both values, get current tab URL and make API call
   // Extract bookmark creation into a function
   async function createBookmark() {
@@ -62,7 +79,8 @@ document.addEventListener('DOMContentLoaded', async function() {
       const currentUrl = tabs[0].url;
       
       try {
-        const response = await fetch(`${stored.hoarderUrl}/api/trpc/bookmarks.createBookmark?batch=1`, {
+        const sanitizedUrl = await sanitizeUrl(stored.hoarderUrl);
+        const response = await fetch(`${sanitizedUrl}/api/trpc/bookmarks.createBookmark?batch=1`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -78,15 +96,13 @@ document.addEventListener('DOMContentLoaded', async function() {
           })
         });
 
+        console.log(response);
+
         if (response.ok) {
-          notification.classList.add('show');
-          setTimeout(() => {
-            notification.classList.remove('show');
-          }, 2000);
-        } else {
-          throw new Error('API call failed');
-        }
+          notify("Hoarded!");
+        } 
       } catch (error) {
+        notify("Failed to hoard! " + error);
         console.error('Failed to create bookmark:', error);
       }
     }
@@ -98,43 +114,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     await createBookmark();
   }
 
-  // Update form submission to include new setting
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const button = form.querySelector('button');
-    const originalText = button.textContent;
-
-    const formData = {
-      hoarderUrl: urlInput.value,
-      apiToken: apiTokenInput.value,
-      showNotifications: notificationsCheckbox.checked,
-      hoardOnOpen: hoardOnOpenCheckbox.checked
-    };
-
-    try {
-      await browser.storage.local.set(formData);
-      
-      button.textContent = 'Saved!';
-      button.style.backgroundColor = '#2e7d32';
-    } catch (error) {
-      showError(button, 'Save Failed');
-      return;
-    }
-    
-    setTimeout(() => {
-      button.textContent = originalText;
-      button.style.backgroundColor = '';
-    }, 2000);
-  });
-
-  function showError(button, message) {
-    button.textContent = message;
-    button.style.backgroundColor = '#d32f2f';
-    setTimeout(() => {
-      button.textContent = 'Save';
-      button.style.backgroundColor = '';
-    }, 2000);
-  }
 
   // Add import button handler
   const importButton = document.querySelector('.import-button');
@@ -151,7 +130,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         for (const bookmark of allBookmarks) {
           try {
-            await fetch(`${stored.hoarderUrl}/api/trpc/bookmarks.createBookmark?batch=1`, {
+            const sanitizedUrl = sanitizeUrl(stored.hoarderUrl);
+            await fetch(`${sanitizedUrl}/api/trpc/bookmarks.createBookmark?batch=1`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -167,23 +147,18 @@ document.addEventListener('DOMContentLoaded', async function() {
               })
             });
           } catch (error) {
+            notify("Failed to import bookmark: " + bookmark.url + " " + error);
             console.error('Failed to import bookmark:', bookmark.url);
           }
         }
-
-        importButton.textContent = 'Import Complete!';
+        notify("Bookmarks imported!");
         setTimeout(() => {
-          importButton.textContent = 'Import All Bookmarks';
+          importButton.textContent = "Send All Bookmarks";
           importButton.disabled = false;
-        }, 2000);
-
+        }, 1500);
       } catch (error) {
+        notify("Failed to import bookmarks! " + error);
         console.error('Failed to get bookmarks:', error);
-        importButton.textContent = 'Import Failed';
-        setTimeout(() => {
-          importButton.textContent = 'Import All Bookmarks';
-          importButton.disabled = false;
-        }, 2000);
       }
     }
   });
