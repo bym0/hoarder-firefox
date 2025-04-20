@@ -1,5 +1,7 @@
 <img height="50px" src="https://github.com/hoarder-app/hoarder/raw/main/screenshots/logo.png" />
 
+!!! Please use -> [official extension](https://addons.mozilla.org/en-US/firefox/addon/karakeep/) !!!
+
 ## hoarder firefox add-on
 
 i tried the other only hoarder add-on for firefox and it just didn't work for (as also for others as seen in the issues).
